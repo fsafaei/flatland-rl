@@ -321,8 +321,12 @@ class GridTransitionMap(TransitionMap):
         boolean
             True if and only if the cell is a dead-end.
         """
-        cell_transition = self.get_full_transitions(rcPos[0], rcPos[1])
-        return Grid4Transitions.has_deadend(cell_transition)
+        nbits = 0
+        tmp = self.get_full_transitions(rcPos[0], rcPos[1])
+        while tmp > 0:
+            nbits += (tmp & 1)
+            tmp = tmp >> 1
+        return nbits == 1
 
     def is_simple_turn(self, rcPos: IntVector2DArray):
         """
@@ -571,9 +575,9 @@ class GridTransitionMap(TransitionMap):
                 elif switch_type_idx == 2:
                     transition = simple_switch_east_south
                 else:
-                    transition = self.random_generator.choice(three_way_transitions, 1)[0]
+                    transition = self.random_generator.choice(three_way_transitions, 1)
             else:
-                transition = self.random_generator.choice(three_way_transitions, 1)[0]
+                transition = self.random_generator.choice(three_way_transitions, 1)
             transition = transitions.rotate_transition(transition, int(hole * 90))
             self.set_transitions((rcPos[0], rcPos[1]), transition)
 

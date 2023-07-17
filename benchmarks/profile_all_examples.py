@@ -19,9 +19,7 @@ def profile(resource, entry):
         with swap_attr(sys, "stdin", StringIO("q")):
             global my_func
 
-            def my_func(): runpy.run_path(file_in, run_name="__main__", init_globals={
-                    'argv': ['--sleep-for-animation=False', '--do_rendering=False']
-                })
+            def my_func(): runpy.run_path(file_in, run_name="__main__")
 
             cProfile.run('my_func()', sort='time')
 

@@ -34,6 +34,4 @@ for entry in [entry for entry in importlib_resources.contents('examples') if
                 # https://docs.python.org/3/library/test.html
                 # TODO remove input() from examples?
                 with swap_attr(sys, "stdin", StringIO("q")):
-                    runpy.run_path(file_in, run_name="__main__", init_globals={
-                    'argv': ['--sleep-for-animation=False', '--do_rendering=False']
-                })
+                    runpy.run_path(file_in, run_name="__main__")

@@ -97,7 +97,6 @@ class EnvAgent:
         self.old_position = None
         self.old_direction = None
         self.moving = False
-        self.arrival_time = None
 
         self.malfunction_handler.reset()
 

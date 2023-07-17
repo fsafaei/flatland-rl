@@ -12,24 +12,24 @@ from flatland.core.env_prediction_builder import PredictionBuilder
 from flatland.core.grid.grid4_utils import get_new_position
 from flatland.core.grid.grid_utils import coordinate_to_position
 from flatland.envs.agent_utils import EnvAgent
-from flatland.envs.fast_methods import fast_argmax, fast_count_nonzero, fast_position_equal, fast_delete, fast_where
 from flatland.envs.step_utils.states import TrainState
 from flatland.utils.ordered_set import OrderedSet
 
-Node = collections.namedtuple('Node', 'dist_own_target_encountered '
-                                      'dist_other_target_encountered '
-                                      'dist_other_agent_encountered '
-                                      'dist_potential_conflict '
-                                      'dist_unusable_switch '
-                                      'dist_to_next_branch '
-                                      'dist_min_to_target '
-                                      'num_agents_same_direction '
-                                      'num_agents_opposite_direction '
-                                      'num_agents_malfunctioning '
-                                      'speed_min_fractional '
-                                      'num_agents_ready_to_depart '
-                                      'childs')
 
+
+Node = collections.namedtuple('Node', 'dist_own_target_encountered '
+                                        'dist_other_target_encountered '
+                                        'dist_other_agent_encountered '
+                                        'dist_potential_conflict '
+                                        'dist_unusable_switch '
+                                        'dist_to_next_branch '
+                                        'dist_min_to_target '
+                                        'num_agents_same_direction '
+                                        'num_agents_opposite_direction '
+                                        'num_agents_malfunctioning '
+                                        'speed_min_fractional '
+                                        'num_agents_ready_to_depart '
+                                        'childs')
 
 class TreeObsForRailEnv(ObservationBuilder):
     """
@@ -41,6 +41,7 @@ class TreeObsForRailEnv(ObservationBuilder):
 
     For details about the features in the tree observation see the get() function.
     """
+
 
     tree_explored_actions_char = ['L', 'F', 'R', 'B']
 
@@ -99,15 +100,15 @@ class TreeObsForRailEnv(ObservationBuilder):
                 self.location_has_agent_direction[tuple(_agent.position)] = _agent.direction
                 self.location_has_agent_speed[tuple(_agent.position)] = _agent.speed_counter.speed
                 self.location_has_agent_malfunction[tuple(_agent.position)] = \
-                    _agent.malfunction_handler.malfunction_down_counter
+                        _agent.malfunction_handler.malfunction_down_counter
 
             # [NIMISH] WHAT IS THIS
             if _agent.state.is_off_map_state() and \
                 _agent.initial_position:
-                self.location_has_agent_ready_to_depart.setdefault(tuple(_agent.initial_position), 0)
-                self.location_has_agent_ready_to_depart[tuple(_agent.initial_position)] += 1
-            # self.location_has_agent_ready_to_depart[tuple(_agent.initial_position)] = \
-            #     self.location_has_agent_ready_to_depart.get(tuple(_agent.initial_position), 0) + 1
+                    self.location_has_agent_ready_to_depart.setdefault(tuple(_agent.initial_position), 0)
+                    self.location_has_agent_ready_to_depart[tuple(_agent.initial_position)] += 1
+                # self.location_has_agent_ready_to_depart[tuple(_agent.initial_position)] = \
+                #     self.location_has_agent_ready_to_depart.get(tuple(_agent.initial_position), 0) + 1
 
         observations = super().get_many(handles)
 
@@ -206,24 +207,24 @@ class TreeObsForRailEnv(ObservationBuilder):
             return None
 
         possible_transitions = self.env.rail.get_transitions(*agent_virtual_position, agent.direction)
-        num_transitions = fast_count_nonzero(possible_transitions)
+        num_transitions = np.count_nonzero(possible_transitions)
 
         # Here information about the agent itself is stored
         distance_map = self.env.distance_map.get()
 
         # was referring to TreeObsForRailEnv.Node
         root_node_observation = Node(dist_own_target_encountered=0, dist_other_target_encountered=0,
-                                     dist_other_agent_encountered=0, dist_potential_conflict=0,
-                                     dist_unusable_switch=0, dist_to_next_branch=0,
-                                     dist_min_to_target=distance_map[
-                                         (handle, *agent_virtual_position,
-                                          agent.direction)],
-                                     num_agents_same_direction=0, num_agents_opposite_direction=0,
-                                     num_agents_malfunctioning=agent.malfunction_handler.malfunction_down_counter,
-                                     speed_min_fractional=agent.speed_counter.speed,
-                                     num_agents_ready_to_depart=0,
-                                     childs={})
-        # print("root node type:", type(root_node_observation))
+                                                       dist_other_agent_encountered=0, dist_potential_conflict=0,
+                                                       dist_unusable_switch=0, dist_to_next_branch=0,
+                                                       dist_min_to_target=distance_map[
+                                                           (handle, *agent_virtual_position,
+                                                            agent.direction)],
+                                                       num_agents_same_direction=0, num_agents_opposite_direction=0,
+                                                       num_agents_malfunctioning=agent.malfunction_handler.malfunction_down_counter,
+                                                       speed_min_fractional=agent.speed_counter.speed,
+                                                       num_agents_ready_to_depart=0,
+                                                       childs={})
+        #print("root node type:", type(root_node_observation))
 
         visited = OrderedSet()
 
@@ -233,7 +234,7 @@ class TreeObsForRailEnv(ObservationBuilder):
         orientation = agent.direction
 
         if num_transitions == 1:
-            orientation = fast_argmax(possible_transitions)
+            orientation = np.argmax(possible_transitions)
 
         for i, branch_direction in enumerate([(orientation + i) % 4 for i in range(-1, 3)]):
 
@@ -273,11 +274,8 @@ class TreeObsForRailEnv(ObservationBuilder):
         last_is_target = False
 
         visited = OrderedSet()
-
         agent = self.env.agents[handle]
-        distance_map_handle = self.env.distance_map.get()[handle]
-
-        time_per_cell = 1.0 / agent.speed_counter.speed
+        time_per_cell = np.reciprocal(agent.speed_counter.speed)
         own_target_encountered = np.inf
         other_agent_encountered = np.inf
         other_target_encountered = np.inf
@@ -294,7 +292,7 @@ class TreeObsForRailEnv(ObservationBuilder):
             # #############################
             # Modify here to compute any useful data required to build the end node's features. This code is called
             # for each cell visited between the previous branching node and the next switch / target / dead-end.
-            if self.location_has_agent.get(position, 0) == 1:
+            if position in self.location_has_agent:
                 if tot_dist < other_agent_encountered:
                     other_agent_encountered = tot_dist
 
@@ -336,29 +334,31 @@ class TreeObsForRailEnv(ObservationBuilder):
                     post_step = min(self.max_prediction_depth - 1, predicted_time + 1)
 
                     # Look for conflicting paths at distance tot_dist
-                    if int_position in fast_delete(self.predicted_pos[predicted_time], handle):
-                        conflicting_agent = fast_where(self.predicted_pos[predicted_time] == int_position)
-                        for ca in conflicting_agent:
+                    if int_position in np.delete(self.predicted_pos[predicted_time], handle, 0):
+                        conflicting_agent = np.where(self.predicted_pos[predicted_time] == int_position)
+                        for ca in conflicting_agent[0]:
                             if direction != self.predicted_dir[predicted_time][ca] and cell_transitions[
                                 self._reverse_dir(
                                     self.predicted_dir[predicted_time][ca])] == 1 and tot_dist < potential_conflict:
                                 potential_conflict = tot_dist
                             if self.env.agents[ca].state == TrainState.DONE and tot_dist < potential_conflict:
                                 potential_conflict = tot_dist
+
                     # Look for conflicting paths at distance num_step-1
-                    elif int_position in fast_delete(self.predicted_pos[pre_step], handle):
-                        conflicting_agent = fast_where(self.predicted_pos[pre_step] == int_position)
-                        for ca in conflicting_agent:
+                    elif int_position in np.delete(self.predicted_pos[pre_step], handle, 0):
+                        conflicting_agent = np.where(self.predicted_pos[pre_step] == int_position)
+                        for ca in conflicting_agent[0]:
                             if direction != self.predicted_dir[pre_step][ca] \
                                 and cell_transitions[self._reverse_dir(self.predicted_dir[pre_step][ca])] == 1 \
                                 and tot_dist < potential_conflict:  # noqa: E125
                                 potential_conflict = tot_dist
                             if self.env.agents[ca].state == TrainState.DONE and tot_dist < potential_conflict:
                                 potential_conflict = tot_dist
+
                     # Look for conflicting paths at distance num_step+1
-                    elif int_position in fast_delete(self.predicted_pos[post_step], handle):
-                        conflicting_agent = fast_where(self.predicted_pos[post_step] == int_position)
-                        for ca in conflicting_agent:
+                    elif int_position in np.delete(self.predicted_pos[post_step], handle, 0):
+                        conflicting_agent = np.where(self.predicted_pos[post_step] == int_position)
+                        for ca in conflicting_agent[0]:
                             if direction != self.predicted_dir[post_step][ca] and cell_transitions[self._reverse_dir(
                                 self.predicted_dir[post_step][ca])] == 1 \
                                 and tot_dist < potential_conflict:  # noqa: E125
@@ -381,7 +381,7 @@ class TreeObsForRailEnv(ObservationBuilder):
             visited.add((position[0], position[1], direction))
 
             # If the target node is encountered, pick that as node. Also, no further branching is possible.
-            if fast_position_equal(position, self.env.agents[handle].target):
+            if np.array_equal(position, self.env.agents[handle].target):
                 last_is_target = True
                 break
 
@@ -389,7 +389,7 @@ class TreeObsForRailEnv(ObservationBuilder):
             if crossing_found:
                 # Treat the crossing as a straight rail cell
                 total_transitions = 2
-            num_transitions = fast_count_nonzero(cell_transitions)
+            num_transitions = np.count_nonzero(cell_transitions)
 
             exploring = False
 
@@ -408,7 +408,7 @@ class TreeObsForRailEnv(ObservationBuilder):
                     # Keep walking through the tree along `direction`
                     exploring = True
                     # convert one-hot encoding to 0,1,2,3
-                    direction = fast_argmax(cell_transitions)
+                    direction = np.argmax(cell_transitions)
                     position = get_new_position(position, direction)
                     num_steps += 1
                     tot_dist += 1
@@ -435,25 +435,25 @@ class TreeObsForRailEnv(ObservationBuilder):
             dist_min_to_target = 0
         elif last_is_terminal:
             dist_to_next_branch = np.inf
-            dist_min_to_target = distance_map_handle[position[0], position[1], direction]
+            dist_min_to_target = self.env.distance_map.get()[handle, position[0], position[1], direction]
         else:
             dist_to_next_branch = tot_dist
-            dist_min_to_target = distance_map_handle[position[0], position[1], direction]
+            dist_min_to_target = self.env.distance_map.get()[handle, position[0], position[1], direction]
 
         # TreeObsForRailEnv.Node
         node = Node(dist_own_target_encountered=own_target_encountered,
-                    dist_other_target_encountered=other_target_encountered,
-                    dist_other_agent_encountered=other_agent_encountered,
-                    dist_potential_conflict=potential_conflict,
-                    dist_unusable_switch=unusable_switch,
-                    dist_to_next_branch=dist_to_next_branch,
-                    dist_min_to_target=dist_min_to_target,
-                    num_agents_same_direction=other_agent_same_direction,
-                    num_agents_opposite_direction=other_agent_opposite_direction,
-                    num_agents_malfunctioning=malfunctioning_agent,
-                    speed_min_fractional=min_fractional_speed,
-                    num_agents_ready_to_depart=other_agent_ready_to_depart_encountered,
-                    childs={})
+                                      dist_other_target_encountered=other_target_encountered,
+                                      dist_other_agent_encountered=other_agent_encountered,
+                                      dist_potential_conflict=potential_conflict,
+                                      dist_unusable_switch=unusable_switch,
+                                      dist_to_next_branch=dist_to_next_branch,
+                                      dist_min_to_target=dist_min_to_target,
+                                      num_agents_same_direction=other_agent_same_direction,
+                                      num_agents_opposite_direction=other_agent_opposite_direction,
+                                      num_agents_malfunctioning=malfunctioning_agent,
+                                      speed_min_fractional=min_fractional_speed,
+                                      num_agents_ready_to_depart=other_agent_ready_to_depart_encountered,
+                                      childs={})
 
         # #############################
         # #############################

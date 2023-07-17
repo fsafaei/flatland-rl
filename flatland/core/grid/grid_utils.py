@@ -1,4 +1,3 @@
-from math import isnan
 from typing import Tuple, Callable, List, Type
 
 import numpy as np
@@ -235,6 +234,32 @@ class Vec2dOperations:
 
 
 def position_to_coordinate(depth: int, positions: List[int]):
+    """
+    Converts positions to coordinates::
+
+         [ 0      d    ..  (w-1)*d
+           1      d+1
+           ...
+           d-1    2d-1     w*d-1
+         ]
+         -->
+         [ (0,0) (0,1) ..  (0,w-1)
+           (1,0) (1,1)     (1,w-1)
+           ...
+           (d-1,0) (d-1,1)     (d-1,w-1)
+          ]
+
+    :param depth:
+    :param coords:
+    :return:
+    """
+    coords = ()
+    for p in positions:
+        coords = coords + ((int(p) % depth, int(p) // depth),)  # changed x_dim to y_dim
+    return coords
+
+
+def coordinate_to_position(depth, coords):
     """Converts coordinates to positions::
 
         [ (0,0) (0,1) ..  (0,w-1)
@@ -256,38 +281,15 @@ def position_to_coordinate(depth: int, positions: List[int]):
     depth : int
     positions : List[Tuple[int,int]]
     """
-    coords = ()
-    for p in positions:
-        coords = coords + ((int(p) % depth, int(p) // depth),)  # changed x_dim to y_dim
-    return coords
-
-
-def coordinate_to_position(depth, coords):
-    """
-    Converts positions to coordinates::
-
-         [ 0      d    ..  (w-1)*d
-           1      d+1
-           ...
-           d-1    2d-1     w*d-1
-         ]
-         -->
-         [ (0,0) (0,1) ..  (0,w-1)
-           (1,0) (1,1)     (1,w-1)
-           ...
-           (d-1,0) (d-1,1)     (d-1,w-1)
-          ]
-
-    :param depth:
-    :param coords:
-    :return:
-    """
-    position = list(range(len(coords)))
-    for index, t in enumerate(coords):
-        if isnan(t[0]):
-            position[index] = -1
+    position = np.empty(len(coords), dtype=int)
+    idx = 0
+    for t in coords:
+        # Set None type coordinates off the grid
+        if np.isnan(t[0]):
+            position[idx] = -1
         else:
-            position[index] = int(t[1] * depth + t[0])
+            position[idx] = int(t[1] * depth + t[0])
+        idx += 1
     return position
 
 

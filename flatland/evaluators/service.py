@@ -64,7 +64,8 @@ if debug_mode:
 # 8 hours (will get debug timeout from env variable if applicable)
 OVERALL_TIMEOUT = int(os.getenv(
     "FLATLAND_OVERALL_TIMEOUT",
-    2 * 60 * 60))
+    # 2 * 60 * 60))
+    100 * 60 * 60))
 
 # 10 mins
 INTIAL_PLANNING_TIMEOUT = int(os.getenv(
@@ -74,7 +75,8 @@ INTIAL_PLANNING_TIMEOUT = int(os.getenv(
 # 10 seconds
 PER_STEP_TIMEOUT = int(os.getenv(
     "FLATLAND_PER_STEP_TIMEOUT",
-    10))
+    # 10))
+    10000))
 
 # 5 min - applies to the rest of the commands
 DEFAULT_COMMAND_TIMEOUT = int(os.getenv(
